@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use std::sync::{Arc, Mutex};
 
 use hyper::client::IntoUrl;
-use hyper::header::{Headers, ContentType, Location, Referer, UserAgent, Accept};
+use hyper::header::{Headers, ContentType, Location, Referer, UserAgent, Accept, Authorization, Basic};
 use hyper::method::Method;
 use hyper::status::StatusCode;
 use hyper::version::HttpVersion;
@@ -187,6 +187,25 @@ impl RequestBuilder {
         let body = serde_json::to_vec(json).expect("serde to_vec cannot fail");
         self.headers.set(ContentType::json());
         self.body = Some(Ok(body.into()));
+        self
+    }
+
+    /// Add `Authorization` header to this request
+    ///
+    /// ```no_run
+    /// let client = reqwest::Client::new().expect("client failed to construct");
+    ///
+    /// let res = client.get("https://www.rust-lang.org")
+    ///     .basic_auth("Aladdin", "OpenSesame")
+    ///     .send();
+    /// ```
+    pub fn basic_auth(mut self, username: &str, password: &str) -> RequestBuilder {
+        self.headers.set(Authorization(
+            Basic {
+                username: username.to_owned(),
+                password: Some(password.to_owned())
+            }
+        ));
         self
     }
 
