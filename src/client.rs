@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use std::sync::{Arc, Mutex};
 
 use hyper::client::IntoUrl;
-use hyper::header::{Headers, ContentType, Location, Referer, UserAgent, Accept, Authorization, Basic};
+use hyper::header::{Headers, ContentType, Location, Referer, UserAgent, Accept, Authorization, Basic, Bearer};
 use hyper::method::Method;
 use hyper::status::StatusCode;
 use hyper::version::HttpVersion;
@@ -190,7 +190,7 @@ impl RequestBuilder {
         self
     }
 
-    /// Add `Authorization` header to this request
+    /// Add Basic Authentication to this request
     ///
     /// ```no_run
     /// let client = reqwest::Client::new().expect("client failed to construct");
@@ -204,6 +204,24 @@ impl RequestBuilder {
             Basic {
                 username: username.to_owned(),
                 password: Some(password.to_owned())
+            }
+        ));
+        self
+    }
+
+    /// Add Bearer Authentication to this request
+    ///
+    /// ```no_run
+    /// let client = reqwest::Client::new().expect("client failed to construct");
+    ///
+    /// let res = client.get("https://www.rust-lang.org")
+    ///     .oauth2_bearer("abcdefg")
+    ///     .send();
+    /// ```
+    pub fn oauth2_bearer(mut self, token: &str) -> RequestBuilder {
+        self.headers.set(Authorization(
+            Bearer {
+                token: token.to_owned()
             }
         ));
         self
@@ -378,7 +396,7 @@ mod tests {
     use ::body;
     use hyper::method::Method;
     use hyper::Url;
-    use hyper::header::{Host, Headers, ContentType, Authorization, Basic};
+    use hyper::header::{Host, Headers, ContentType, Authorization, Basic, Bearer};
     use std::collections::HashMap;
     use serde_urlencoded;
     use serde_json;
@@ -464,6 +482,19 @@ mod tests {
 
         assert_eq!(*username, "Aladdin".to_owned());
         assert_eq!(*password, Some("OpenSesame".to_owned()));
+    }
+
+    #[test]
+    fn add_oauth2_bearer() {
+        let client = Client::new().unwrap();
+        let some_url = "https://google.com/";
+        let mut r = client.post(some_url);
+
+        r = r.oauth2_bearer("abcdefg");
+
+        let Authorization(Bearer {ref token }) = *r.headers.get::<Authorization<Bearer>>().unwrap();
+
+        assert_eq!(*token, "abcdefg".to_owned());
     }
 
     #[test]
