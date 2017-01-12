@@ -378,7 +378,7 @@ mod tests {
     use ::body;
     use hyper::method::Method;
     use hyper::Url;
-    use hyper::header::{Host, Headers, ContentType};
+    use hyper::header::{Host, Headers, ContentType, Authorization, Basic};
     use std::collections::HashMap;
     use serde_urlencoded;
     use serde_json;
@@ -450,6 +450,20 @@ mod tests {
 
         // then make sure they were added correctly
         assert_eq!(r.headers, headers);
+    }
+
+    #[test]
+    fn add_basic_auth() {
+        let client = Client::new().unwrap();
+        let some_url = "https://google.com/";
+        let mut r = client.post(some_url);
+
+        r = r.basic_auth("Aladdin", "OpenSesame");
+
+        let Authorization(Basic {ref username, ref password }) = *r.headers.get::<Authorization<Basic>>().unwrap();
+
+        assert_eq!(*username, "Aladdin".to_owned());
+        assert_eq!(*password, Some("OpenSesame".to_owned()));
     }
 
     #[test]
