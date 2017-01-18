@@ -1,2 +1,12 @@
 target
 Cargo.lock
+
+# Mac OS
+.DS_Store
+
+# IntelliJ
+.idea/
+
+# generated files
+reqwest
+
